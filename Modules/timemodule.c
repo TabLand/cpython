@@ -70,7 +70,7 @@ check_ticks_per_second(long tps, const char *context)
 {
     /* Effectively, check that _PyTime_MulDiv(t, SEC_TO_NS, ticks_per_second)
        cannot overflow. */
-    if (tps >= 0 && (_PyTime_t)tps > _PyTime_MAX / SEC_TO_NS) {
+    if (tps >= 0 && (_PyTime_t)tps > (_PyTime_MAX / SEC_TO_NS)) {
         PyErr_Format(PyExc_OverflowError, "%s is too large", context);
         return -1;
     }

@@ -1,7 +1,7 @@
 """Python part of the warnings subsystem."""
 
 import sys
-
+import os
 
 __all__ = ["warn", "warn_explicit", "showwarning",
            "formatwarning", "filterwarnings", "simplefilter",
@@ -191,6 +191,9 @@ def _add_filter(*item, append):
         if item not in filters:
             filters.append(item)
     _filters_mutated()
+
+def debug_filters():
+    print(repr({"debug_filters": filters, "pid": os.getpid()}))
 
 def resetwarnings():
     """Clear the list of warning filters, so that no filters are active."""
