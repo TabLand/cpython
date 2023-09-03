@@ -7,6 +7,7 @@ import difflib
 import gc
 from functools import wraps
 import asyncio
+import warnings
 from test.support import import_helper
 
 support.requires_working_socket(module=True)
@@ -1943,13 +1944,13 @@ class JumpTestCase(unittest.TestCase):
         if warning is None and error is None:
             func(output)
         elif warning is not None and error is None:
-            with self.assertWarnsRegex(*warning):
+            with self.assertWarnsRegex(*warning) as warning_context:
                 func(output)
         elif warning is None and error is not None:
             with self.assertRaisesRegex(*error):
                 func(output)
         else:
-            with self.assertWarnsRegex(*warning) as warning_context, self.assertRaisesRegex(*error) as error_context:
+            with self.assertRaisesRegex(*error) as error_context, self.assertWarnsRegex(*warning) as warning_context:
                 func(output)
 
         sys.settrace(None)
@@ -1970,8 +1971,8 @@ class JumpTestCase(unittest.TestCase):
             with self.assertRaisesRegex(*error):
                 asyncio.run(func(output))
         else:
-            raise Exception("Not currently possible to assert both a warning and an exception in tandem, the former is seemingly ignored by the unittest framework")
-            assertTrue(False)
+            with self.assertRaisesRegex(*error) as error_context, self.assertWarnsRegex(*warning) as warning_context:
+                func(output)
 
         sys.settrace(None)
         asyncio.set_event_loop_policy(None)
@@ -2704,12 +2705,26 @@ output.append(4)
         sys.settrace(None)
         self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
 
-    @jump_test(2, 4, [1], event='call', error=(ValueError, "can't jump from"
-               " the 'call' trace event of a new frame"),
-               warning=(RuntimeWarning, unbound_locals))
+    @jump_test(1, 2, [1, 2], event='call', error=(ValueError, 'Test Value Error'),
+                    warning=(RuntimeWarning, 'Test Runtime Warning'))
+    def test_error_and_warning_in_tandem(output):
+        output.append(1)
+        output.append(2)
+        warnings.warn(RuntimeWarning("Test Runtime Warning"))
+        raise ValueError("Test Value Error")
+    
+    @jump_test(1, 2, [1, 2], event='call', error=(ValueError, 'Test Value Error'),
+                    warning=(RuntimeWarning, 'Test Runtime Warning'))
+    def test_warning_and_error_in_tandem(output):
+        output.append(1)
+        output.append(2)
+        raise ValueError("Test Value Error")
+        warnings.warn(RuntimeWarning("Test Runtime Warning"))
+
+    @jump_test(2, 3, [1], event='call', error=(ValueError, "can't jump from"
+               " the 'call' trace event of a new frame"))
     def test_no_jump_from_call(output):
         output.append(1)
-        x = [i for i in range(10)]
         def nested():
             output.append(3)
         nested()
