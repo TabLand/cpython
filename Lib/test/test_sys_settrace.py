@@ -1949,8 +1949,8 @@ class JumpTestCase(unittest.TestCase):
             with self.assertRaisesRegex(*error):
                 func(output)
         else:
-            raise Exception("Not currently possible to assert both a warning and an error in tandem, the former is seemingly ignored by the unittest framework")
-            assertTrue(False)
+            with self.assertRaisesRegex(*error) as error_context, self.assertWarnsRegex(*warning) as warning_context:
+                func(output)
 
         sys.settrace(None)
         self.compare_jump_output(expected, output)
@@ -2704,10 +2704,12 @@ output.append(4)
         sys.settrace(None)
         self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
 
-    @jump_test(2, 3, [1], event='call', error=(ValueError, "can't jump from"
-               " the 'call' trace event of a new frame"))
+    @jump_test(2, 4, [1], event='call', error=(ValueError, "can't jump from"
+               " the 'call' trace event of a new frame"),
+               warning=(RuntimeWarning, unbound_locals))
     def test_no_jump_from_call(output):
         output.append(1)
+        x = [i for i in range(10)]
         def nested():
             output.append(3)
         nested()
