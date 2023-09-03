@@ -1949,7 +1949,7 @@ class JumpTestCase(unittest.TestCase):
             with self.assertRaisesRegex(*error):
                 func(output)
         else:
-            with self.assertRaisesRegex(*error) as error_context, self.assertWarnsRegex(*warning) as warning_context:
+            with self.assertWarnsRegex(*warning) as warning_context, self.assertRaisesRegex(*error) as error_context:
                 func(output)
 
         sys.settrace(None)
